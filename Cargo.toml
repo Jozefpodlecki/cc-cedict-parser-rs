@@ -1,0 +1,24 @@
+[package]
+name = "cc-cedict-parser-rs"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94.0"
+repository = "https://github.com/Jozefpodlecki/cc-cedict-parser-rs"
+description = ""
+categories = [
+    "parsing",
+    "data-structures",
+    "text-processing",
+]
+keywords = [
+    "cedict",
+    "chinese",
+    "dictionary",
+    "pinyin",
+    "parser",
+    "mandarin",
+]
+
+[dependencies]
+anyhow = "1.0.90"
+log = "0.4.29"

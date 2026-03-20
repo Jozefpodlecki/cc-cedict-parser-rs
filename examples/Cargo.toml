@@ -1,0 +1,10 @@
+[package]
+name = "cc-cedict-parser-rs-examples"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94.0"
+
+[dependencies]
+anyhow = "1.0.90"
+log = "0.4.29"
+cc-cedict-parser-rs = { path = "../"}
