@@ -17,10 +17,15 @@ pub static TAG_MAP: LazyLock<HashMap<&'static str, &'static str>> = LazyLock::ne
     map.insert("literary", "literary");
     map.insert("TCM", "TCM");
     
+    map.insert("Internet slang", "Internet slang");
     map.insert("mathematics", "mathematics");
+    map.insert("loanword", "loanword");
+    map.insert("film and TV", "film and TV");
     map.insert("Tw", "taiwanese");
     map.insert("tw", "taiwanese");
     map.insert("taiwanese", "taiwanese");
+    map.insert("euphemism", "euphemism");
+    map.insert("courteous", "courteous");
     
     map
 });

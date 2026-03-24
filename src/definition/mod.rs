@@ -29,10 +29,10 @@ pub struct Classifier<'a> {
 pub struct DefinitionParser;
 
 impl DefinitionParser {
-    pub fn parse<'a>(defs: &'a str) -> (Vec<Definition<'a>>, Vec<Classifier<'a>>, Option<Reference<'a>>) {
+    pub fn parse<'a>(defs: &'a str) -> (Vec<Definition<'a>>, Vec<Classifier<'a>>, Vec<Reference<'a>>) {
         let mut definitions = Vec::new();
         let mut classifiers = Vec::new();
-        let mut reference = None;
+        let mut references = Vec::new();
 
         for raw in defs.split('/').filter(|d| !d.is_empty()) {
             let raw = raw.trim();
@@ -45,7 +45,7 @@ impl DefinitionParser {
             let (without_reference, reference_value, extracted_reference) = ReferenceExtractor::extract(raw);
 
             if extracted_reference.is_some() {
-                reference = extracted_reference;
+                references.push(extracted_reference.unwrap());
 
                 if let Some(value) = reference_value {
                     definitions.push(Definition {
@@ -74,7 +74,7 @@ impl DefinitionParser {
             }
         }
 
-        (definitions, classifiers, reference)
+        (definitions, classifiers, references)
     }
 }
 

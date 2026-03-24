@@ -51,6 +51,7 @@ impl ReferenceExtractor {
             "abbr. for",
             "short for",
             "see",
+            "also written",
             "variant of",
         ];
 
@@ -183,4 +184,15 @@ mod tests {
         assert_eq!(reference.pinyin, Some(vec!["zhang4", "peng5"]));
     }
     
+    #[test]
+    fn should_extract_reference_also_written() {
+        let input = "also written 廂型車|厢型车[xiang1 xing2 che1]";
+
+        let (_, _, reference) = ReferenceExtractor::extract(input);
+        let reference = reference.expect("Should have reference");
+
+        assert_eq!(reference.traditional, "廂型車");
+        assert_eq!(reference.simplified, Some("厢型车"));
+        assert_eq!(reference.pinyin, Some(vec!["xiang1", "xing2", "che1"]));
+    }
 }
