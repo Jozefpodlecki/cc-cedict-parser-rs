@@ -7,7 +7,7 @@ pub struct Head<'a> {
 pub struct HeadParser;
 
 impl HeadParser {
-    pub fn parse<'a>(line: &'a str) -> Option<(Head, &'a str)> {
+    pub fn parse<'a>(line: &'a str) -> Option<(Head<'a>, &'a str)> {
         let mut parts = line.splitn(3, ' ');
 
         let traditional = parts.next()?;

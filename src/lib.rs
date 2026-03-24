@@ -1,6 +1,6 @@
 mod reader;
 mod entry;
-mod definition;
+mod sense;
 mod head;
 
 pub use reader::*;
