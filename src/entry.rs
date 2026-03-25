@@ -75,6 +75,8 @@ impl<'a> RichEntry<'a> {
 
 mod tests {
     use anyhow::{Context, Result};
+    use crate::sense::ReferenceKind;
+
     use super::*;
 
     #[test]
@@ -100,11 +102,10 @@ mod tests {
         assert_eq!(entry.simplified, "美国交会");
         assert_eq!(entry.traditional, "美國交會");
         assert_eq!(entry.pinyin, vec!["Mei3", "guo2", "Jiao1", "hui4"]);
-        // assert_eq!(entry.definitions[0].value, "US Securities and Exchange Commission (SEC)");
-        assert!(entry.senses[0].tags.is_empty());
-        assert!(entry.senses[0].qualifier.is_none());
+        assert_eq!(entry.senses[0].glosses, vec!["US Securities and Exchange Commission (SEC)".into()]);
 
         let reference = entry.references.pop().with_context(|| "Should have reference")?;
+        assert_eq!(reference.kind, ReferenceKind::Abbreviation);
         assert_eq!(reference.pinyin, None);
         assert_eq!(reference.simplified, Some("美国证券交易委员会".into()));
         assert_eq!(reference.traditional, "美國證券交易委員會".into());
@@ -120,12 +121,9 @@ mod tests {
         assert_eq!(entry.simplified, "神通广大");
         assert_eq!(entry.traditional, "神通廣大");
         assert_eq!(entry.pinyin, vec!["shen2", "tong1", "guang3", "da4"]);
-        // assert_eq!(entry.definitions[0].value, "to possess great magical power");
+        assert_eq!(entry.senses[0].glosses, vec!["to possess great magical power".into(),  "to possess remarkable abilities".into()]);
         assert_eq!(entry.senses[0].tags, vec!["idiom"]);
         assert!(entry.senses[0].qualifier.is_none());
-        // assert_eq!(entry.definitions[1].value, "to possess remarkable abilities");
-        assert!(entry.senses[1].tags.is_empty());
-        assert!(entry.senses[1].qualifier.is_none());
 
         Ok(())
     }
@@ -147,6 +145,7 @@ mod tests {
         assert!(entry.senses[1].qualifier.is_none());
 
         let reference = entry.references.pop().with_context(|| "Should have reference")?;
+        assert_eq!(reference.kind, ReferenceKind::Abbreviation);
         assert_eq!(reference.pinyin, None);
         assert_eq!(reference.traditional, "空中小姐".into());
 
@@ -157,21 +156,22 @@ mod tests {
     fn should_parse_entry_with_multiple_senses_and_later_reference() -> Result<()> {
         let line = "箱型車 箱型车 [xiang1 xing2 che1] /van (Tw)/also written 廂型車|厢型车[xiang1 xing2 che1]/";
         let mut entry = RichEntry::new(line).expect("Should parse line");
-        dbg!(&entry);
+
         assert_eq!(entry.traditional, "箱型車");
         assert_eq!(entry.simplified, "箱型车");
         assert_eq!(entry.pinyin, vec!["xiang1", "xing2", "che1"]);
 
         assert_eq!(entry.senses.len(), 1);
 
-        let definition = &entry.senses[0];
-        // assert_eq!(definition.glosses, "van");
-        assert!(definition.tags.contains(&"taiwanese"));
-        assert!(definition.qualifier.is_none());
+        let sense = &entry.senses[0];
+        assert_eq!(sense.glosses, vec!["van".into()]);
+        assert!(sense.tags.contains(&"taiwanese"));
+        assert!(sense.qualifier.is_none());
 
         assert_eq!(entry.references.len(), 1);
 
         let reference = &entry.references[0];
+        assert_eq!(reference.kind, ReferenceKind::AlsoWritten);
         assert_eq!(reference.traditional, "廂型車".into());
         assert_eq!(reference.simplified, Some("厢型车".into()));
         assert_eq!(
@@ -194,6 +194,7 @@ mod tests {
         assert_eq!(reference.simplified, Some("代驾司机".into()));
 
         let reference = entry.references.pop().with_context(|| "Should have reference")?;
+        assert_eq!(reference.kind, ReferenceKind::Abbreviation);
         assert_eq!(reference.traditional, "代理駕駛".into());
         assert_eq!(reference.simplified, Some("代理驾驶".into()));
         assert_eq!(reference.pinyin, Some(vec!["dai4".into(), "li3".into(), "jia4".into(), "shi3".into()]));
@@ -205,8 +206,6 @@ mod tests {
     fn should_parse_entry_with_parenthetical_annotations() -> Result<()> {
         let line = r#"NG NG [N G] /(loanword from Japanese "NG", an initialism for "no good") (film and TV) blooper; to do a blooper/"#;
         let entry = RichEntry::new(line).expect("Should parse line");
-
-        dbg!(&entry);
 
         assert_eq!(entry.traditional, "NG");
         assert_eq!(entry.simplified, "NG");
@@ -244,21 +243,66 @@ mod tests {
         assert!(entry.references.is_empty());
         assert!(entry.classifiers.is_empty());
 
+        Ok(())
+    }
+
+    #[test]
+    fn should_parse_entry_only_reference_with_tag() -> Result<()> {
+        let line = r#"劐 劐 [huo4] /(literary) variant of 穫|获[huo4]/"#;
+        let mut entry = RichEntry::new(line).expect("Should parse line");
+
+        let reference = entry.references.pop().with_context(|| "Should have reference")?;
+        assert_eq!(reference.kind, ReferenceKind::Variant);
+        assert_eq!(reference.traditional, "穫".into());
+        assert_eq!(reference.simplified, Some("获".into()));
+        assert_eq!(reference.pinyin, Some(vec!["huo4".into()]));
 
         Ok(())
     }
 
-     #[test]
-    fn should_parse_entry_() -> Result<()> {
-        let line = r#"劐 劐 [huo4] /(literary) variant of 穫|获[huo4]/"#;
-        let entry = Entry::new(line).expect("Should parse line");
+    #[test]
+    fn should_parse_entry_only_reference() -> Result<()> {
+        let line = r#"鉋 铇 [bao4] /variant of 刨[bao4]/"#;
+        let mut entry = RichEntry::new(line).expect("Should parse line");
 
-        dbg!(&entry);
+        let reference = entry.references.pop().with_context(|| "Should have reference")?;
+        assert_eq!(reference.kind, ReferenceKind::Variant);
+        assert_eq!(reference.traditional, "刨".into());
+        assert_eq!(reference.simplified, None);
+        assert_eq!(reference.pinyin, Some(vec!["bao4".into()]));
 
+        Ok(())
+    }
+
+    #[test]
+    fn should_parse_entry_two_references() -> Result<()> {
+        let line = r#"超算 超算 [chao1 suan4] /supercomputing (abbr. for 超級計算|超级计算[chao1 ji2 ji4 suan4])/supercomputer (abbr. for 超級計算機|超级计算机[chao1 ji2 ji4 suan4 ji1])/"#;
+        let mut entry = RichEntry::new(line).expect("Should parse line");
+
+        let reference = entry.references.pop().with_context(|| "Should have reference")?;
+        assert_eq!(reference.kind, ReferenceKind::Abbreviation);
+        assert_eq!(reference.traditional, "超級計算機".into());
+        assert_eq!(reference.simplified, Some("超级计算机".into()));
+        assert_eq!(reference.pinyin, Some(vec!["chao1", "ji2", "ji4", "suan4", "ji1"].into_iter().map(Into::into).collect::<Vec<_>>()));
+
+        let reference = entry.references.pop().with_context(|| "Should have reference")?;
+        assert_eq!(reference.kind, ReferenceKind::Abbreviation);
+        assert_eq!(reference.traditional, "超級計算".into());
+        assert_eq!(reference.simplified, Some("超级计算".into()));
+        assert_eq!(reference.pinyin, Some(vec!["chao1", "ji2", "ji4", "suan4"].into_iter().map(Into::into).collect::<Vec<_>>()));
 
         Ok(())
     }
     
-    // 不吝珠玉 不吝珠玉 [bu4 lin4 zhu1 yu4] /(idiom) (courteous) please give me your frank opinion; your criticism will be most valuable/
-    // 鉋 铇 [bao4] /variant of 刨[bao4]/
+    #[test]
+    fn should_parse_entry_two_tags() -> Result<()> {
+        let line = r#"不吝珠玉 不吝珠玉 [bu4 lin4 zhu1 yu4] /(idiom) (courteous) please give me your frank opinion; your criticism will be most valuable/"#;
+        let mut entry = RichEntry::new(line).expect("Should parse line");
+
+        assert_eq!(entry.traditional, "不吝珠玉");
+        assert_eq!(entry.simplified, "不吝珠玉");
+        assert_eq!(entry.pinyin, vec!["bu4", "lin4", "zhu1", "yu4"]);
+
+        Ok(())
+    }
 }

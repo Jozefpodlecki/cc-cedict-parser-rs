@@ -1,4 +1,4 @@
-use crate::sense::Reference;
+use crate::sense::{Reference, ReferenceKind};
 
 #[derive(Debug)]
 pub enum ExtractResult {
@@ -16,11 +16,12 @@ impl ReferenceExtractor {
         let trimmed = text.trim();
 
         // Case 1: prefix-based reference
-        if let Some(payload) = Self::strip_prefix(trimmed) {
-            let (core, _) = Self::split_on_comma(payload);
-            if let Some(reference) = Self::parse_reference(core) {
+        if let Some((kind, payload)) = Self::strip_prefix(trimmed) {
+            let (core, gloss) = Self::split_on_comma(payload);
+            if let Some(reference) = Self::parse_reference(core, kind) {
+
                 return ExtractResult::Reference {
-                    parsed: None,
+                    parsed: gloss.map(|g| g.trim().into()).filter(|pr: &Box<str>| !pr.is_empty()),
                     reference,
                 };
             }
@@ -28,8 +29,8 @@ impl ReferenceExtractor {
 
         // Case 2: parenthetical reference
         if let Some((before, inside, _after)) = Self::extract_parenthetical_reference(trimmed) {
-            if let Some(payload) = Self::strip_prefix(inside) {
-                if let Some(reference) = Self::parse_reference(payload) {
+            if let Some((kind, payload)) = Self::strip_prefix(inside) {
+                if let Some(reference) = Self::parse_reference(payload, kind) {
                     return ExtractResult::Reference {
                         parsed: None,
                         reference,
@@ -63,18 +64,20 @@ impl ReferenceExtractor {
         Some((before, inside, after))
     }
 
-    fn strip_prefix<'a>(input: &'a str) -> Option<&'a str> {
-        let prefixes = [
-            "abbr. for",
-            "short for",
-            "see",
-            "also written",
-            "variant of",
+    fn strip_prefix<'a>(input: &'a str) -> Option<(ReferenceKind, &'a str)> {
+        let input = input.trim_start();
+
+        let mappings = [
+            ("abbr. for", ReferenceKind::Abbreviation),
+            ("short for", ReferenceKind::Abbreviation),
+            ("variant of", ReferenceKind::Variant),
+            ("also written", ReferenceKind::AlsoWritten),
+            ("see", ReferenceKind::See),
         ];
 
-        for prefix in prefixes {
+        for (prefix, kind) in mappings {
             if let Some(rest) = input.strip_prefix(prefix) {
-                return Some(rest.trim());
+                return Some((kind, rest.trim()));
             }
         }
 
@@ -97,7 +100,7 @@ impl ReferenceExtractor {
         (input, None)
     }
 
-    fn parse_reference<'a>(input: &'a str) -> Option<Reference> {
+    fn parse_reference<'a>(input: &'a str, kind: ReferenceKind) -> Option<Reference> {
         let input = input.trim();
 
         let (chars_part, pinyin) = if let Some(start) = input.find('[') {
@@ -115,6 +118,7 @@ impl ReferenceExtractor {
         let (traditional, simplified) = Self::split_forms(chars_part);
 
         Some(Reference {
+            kind,
             traditional: traditional.into(),
             simplified: simplified.map(Into::into),
             pinyin,
@@ -132,6 +136,7 @@ impl ReferenceExtractor {
 
 mod tests {
     use anyhow::Result;
+
     use super::*;
 
     #[test]
@@ -144,6 +149,7 @@ mod tests {
             ExtractResult::None(_) => panic!("Should have reference"),
             ExtractResult::Reference { parsed, reference } => {
                 assert!(parsed.is_none());
+                assert_eq!(reference.kind, ReferenceKind::AlsoWritten);
                 assert_eq!(reference.traditional, "廂型車".into());
                 assert_eq!(reference.simplified, Some("厢型车".into()));
                 assert_eq!(reference.pinyin, Some(vec!["xiang1","xing2","che1"].into_iter().map(Into::into).collect::<Vec<_>>()));
@@ -161,9 +167,28 @@ mod tests {
             ExtractResult::None(_) => panic!("Should have reference"),
             ExtractResult::Reference { parsed, reference } => {
                 assert!(parsed.is_none());
+                assert_eq!(reference.kind, ReferenceKind::Abbreviation);
                 assert_eq!(reference.traditional, "第一作者".into());
                 assert_eq!(reference.simplified, None);
                 assert_eq!(reference.pinyin, Some(vec!["di4", "yi1", "zuo4", "zhe3"].into_iter().map(Into::into).collect::<Vec<_>>()));
+            },
+        }
+    }
+
+    #[test]
+    fn should_extract_reference_abbrevation_with_gloss() {
+        let input = "abbr. for 美國證券交易委員會|美国证券交易委员会, US Securities and Exchange Commission (SEC)";
+
+        let result = ReferenceExtractor::extract(input.into());
+    
+        match result {
+            ExtractResult::None(_) => panic!("Should have reference"),
+            ExtractResult::Reference { parsed, reference } => {
+                assert_eq!(parsed, Some("US Securities and Exchange Commission (SEC)".into()));
+                assert_eq!(reference.kind, ReferenceKind::Abbreviation);
+                assert_eq!(reference.traditional, "美國證券交易委員會".into());
+                assert_eq!(reference.simplified, Some("美国证券交易委员会".into()));
+                assert_eq!(reference.pinyin, None);
             },
         }
     }
@@ -178,6 +203,7 @@ mod tests {
             ExtractResult::None(_) => panic!("Should have reference"),
             ExtractResult::Reference { parsed, reference } => {
                 assert!(parsed.is_none());
+                assert_eq!(reference.kind, ReferenceKind::Variant);
                 assert_eq!(reference.traditional, "帳篷".into());
                 assert_eq!(reference.simplified, Some("帐篷".into()));
                 assert_eq!(reference.pinyin, Some(vec!["zhang4", "peng5"].into_iter().map(Into::into).collect::<Vec<_>>()));
@@ -195,6 +221,7 @@ mod tests {
             ExtractResult::None(_) => panic!("Should have reference"),
             ExtractResult::Reference { parsed, reference } => {
                 assert!(parsed.is_none());
+                assert_eq!(reference.kind, ReferenceKind::AlsoWritten);
                 assert_eq!(reference.traditional, "廂型車".into());
                 assert_eq!(reference.simplified, Some("厢型车".into()));
                 assert_eq!(reference.pinyin, Some(vec!["xiang1", "xing2", "che1"].into_iter().map(Into::into).collect::<Vec<_>>()));

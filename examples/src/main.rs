@@ -8,7 +8,7 @@ use cc_cedict_parser_rs::*;
 fn main() -> Result<()> {
     
     basic::example()?;
-    rich::example()?;
+    // rich::example()?;
 
     Ok(())
 }

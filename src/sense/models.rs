@@ -50,6 +50,7 @@ pub enum ReferenceKind {
 /// These indicate semantic or orthographic relationships between lexemes.
 #[derive(Debug)]
 pub struct Reference {
+    pub kind: ReferenceKind,
     pub traditional: Box<str>,
     pub simplified: Option<Box<str>>,
     pub pinyin: Option<Vec<Box<str>>>,

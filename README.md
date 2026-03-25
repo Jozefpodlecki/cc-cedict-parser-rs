@@ -29,7 +29,12 @@ let reader = LineReader::from_file(&file_path)?;
     
 for line in reader {
     let line = line?;
+
+    // basic
     let entry = Entry::new(&line).with_context(|| "Could not parse line")?;
+
+    // with parsed sense
+    let entry = RichEntry::new(&line).with_context(|| "Could not parse line")?;
 }
 ```
 
@@ -38,7 +43,30 @@ for line in reader {
 `神通廣大 神通广大 [shen2 tong1 guang3 da4] /(idiom) to possess great magical power; to possess remarkable abilities/`
 
 ```
-
+RichEntry {
+    traditional: "神通廣大",
+    simplified: "神通广大",
+    pinyin: [
+        "shen2",
+        "tong1",
+        "guang3",
+        "da4",
+    ],
+    senses: [
+        Sense {
+            glosses: [
+                "to possess great magical power",
+                "to possess remarkable abilities",
+            ],
+            tags: [
+                "idiom",
+            ],
+            qualifier: None,
+        },
+    ],
+    classifiers: [],
+    references: [],
+}
 ```
 
 ### Credits

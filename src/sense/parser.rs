@@ -43,7 +43,6 @@ impl SenseParser {
                 };
 
                 if value.is_empty() {
-                    println!("empty gloss ? sense: {senses_str}");
                     continue;
                 }
 
@@ -52,47 +51,13 @@ impl SenseParser {
                 
             }
 
-            senses.push(sense);
+            if !sense.glosses.is_empty() {
+                senses.push(sense);
+            }
         }
 
         (senses, classifiers, references)
     }
-    
-
-    //         
-
-    //         if extracted_reference.is_some() {
-    //             references.push(extracted_reference.unwrap());
-
-    //             if let Some(value) = reference_value {
-    //                 definitions.push(Definition {
-    //                     value: value.to_string(),
-    //                     tags: vec![],
-    //                     qualifier: None,
-    //                 });
-    //             }
-
-    //             continue;
-    //         }
-
-    //         for sense in raw.split(';') {
-    //             let (without_qualifier, qualifier) = QualifierExtractor::extract(sense);
-    //             let (value, tags) = TagExtractor::extract(without_qualifier);
-
-    //             if value.is_empty() {
-    //                 continue;
-    //             }
-
-    //             definitions.push(Definition {
-    //                 value: value.to_string(),
-    //                 tags: tags,
-    //                 qualifier,
-    //             });
-    //         }
-    //     }
-
-    //     (definitions, classifiers, references)
-    // }
 }
 
 
