@@ -14,11 +14,30 @@
 ///
 /// Example:
 /// - "to clamp down; to suppress" → one sense with two glosses
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Default)]
 pub struct Sense<'a> {
     pub glosses: Vec<Box<str>>,  
     pub tags: Vec<&'a str>, 
     pub qualifier: Option<&'a str>,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Default)]
+pub struct OwnedSense {
+    pub glosses: Vec<Box<str>>,  
+    pub tags: Vec<Box<str>>, 
+    pub qualifier: Option<Box<str>>,
+}
+
+impl<'a> Sense<'a> {
+    pub fn to_owned(&self) -> OwnedSense {
+        OwnedSense {
+            glosses: self.glosses.clone(),
+            tags: self.tags.iter().map(|t| (*t).into()).collect(),
+            qualifier: self.qualifier.map(|q| q.into()),
+        }
+    }
 }
 
 /// The kind of relationship between a lexeme and another lexical item.
@@ -28,7 +47,9 @@ pub struct Sense<'a> {
 /// - Variant: an alternate or literary/orthographic form of the same word
 /// - AlsoWritten: another way the same word is written
 /// - See: a pointer to a related entry for further information
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[repr(i32)]
 pub enum ReferenceKind {
     Abbreviation,
     Variant,
@@ -36,6 +57,23 @@ pub enum ReferenceKind {
     See,
 }
 
+impl From<ReferenceKind> for i32 {
+    fn from(value: ReferenceKind) -> Self {
+        value as i32
+    }
+}
+
+impl From<i32> for ReferenceKind {
+    fn from(value: i32) -> Self {
+        match value {
+            0 => ReferenceKind::Abbreviation,
+            1 => ReferenceKind::Variant,
+            2 => ReferenceKind::AlsoWritten,
+            3 => ReferenceKind::See,
+            _ => unreachable!("Unhandled variant")
+        }
+    }
+}
 /// A reference to another lexical item in the dictionary.
 ///
 /// A reference captures the headwords and pronunciation of a related entry.
@@ -48,7 +86,8 @@ pub enum ReferenceKind {
 /// - "see"
 ///
 /// These indicate semantic or orthographic relationships between lexemes.
-#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone)]
 pub struct Reference {
     pub kind: ReferenceKind,
     pub traditional: Box<str>,
@@ -68,9 +107,28 @@ pub struct Reference {
 ///
 /// Example:
 /// - 本 (běn) as a classifier for books
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
 pub struct Classifier<'a> {
     pub traditional: &'a str,
     pub simplified: Option<&'a str>,
     pub pinyin: &'a str,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone)]
+pub struct OwnedClassifier {
+    pub traditional: Box<str>,
+    pub simplified: Option<Box<str>>,
+    pub pinyin: Box<str>,
+}
+
+impl<'a> Classifier<'a> {
+    pub fn to_owned(&self) -> OwnedClassifier {
+        OwnedClassifier {
+            traditional: self.traditional.into(),
+            simplified: self.simplified.map(Into::into),
+            pinyin: self.pinyin.into(),
+        }
+    }
 }

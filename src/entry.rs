@@ -26,6 +26,7 @@ use crate::{sense::{Classifier, Sense, SenseParser, Reference}, head::HeadParser
 /// - one lexeme ("巨")
 /// - multiple senses
 /// - some senses containing multiple glosses
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
 pub struct Entry<'a> {
     pub traditional: &'a str,
@@ -47,6 +48,7 @@ impl<'a> Entry<'a> {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
 pub struct RichEntry<'a> {
     pub traditional: &'a str,

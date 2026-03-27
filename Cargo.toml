@@ -22,3 +22,8 @@ keywords = [
 [dependencies]
 anyhow = "1.0.90"
 log = "0.4.29"
+serde = { version = "1.0.228", features = ["derive"], optional = true}
+
+[features]
+default = []
+serde = ["dep:serde"]
