@@ -1,3 +1,6 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// A *sense* represents a single distinct meaning of a lexeme (dictionary entry).
 ///
 /// A word (lexeme) may have multiple senses when it is polysemous.

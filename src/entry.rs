@@ -1,5 +1,9 @@
 use crate::{sense::{Classifier, Sense, SenseParser, Reference}, head::HeadParser};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+
 /// A CC-CEDICT dictionary entry representing a single lexeme (headword).
 ///
 /// Each entry corresponds to one Chinese word or phrase, written in both
